@@ -211,7 +211,11 @@ gtkwave simulation/risc_cpu.vcd
 │   └── risc_cpu_tb.v
 │
 ├── simulation/
-│   └── simulation outputs
+│   ├── risc_cpu.vcd
+│   └── risc_cpu_tb.vvp
+│
+├── screenshots/
+│   └── gtkwave_verification.png
 │
 ├── README.md
 └── LICENSE
