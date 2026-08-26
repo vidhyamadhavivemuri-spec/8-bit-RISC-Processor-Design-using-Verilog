@@ -226,7 +226,24 @@ The processor waveform was analyzed using GTKWave. The waveform shows the clock,
 
 ![GTKWave RISC Processor Verification](screenshots/gtkwave_verification.png)
 
+## Simulation Results
 
+The testbench successfully verified the execution of the implemented instructions.
+
+```text
+======================================
+        RISC CPU TEST RESULTS
+======================================
+R1 = 10
+R2 = 5
+R3 = 15
+R4 = 5
+R5 = 0
+R6 = 15
+======================================
+RISC CPU SUCCESS: All instructions executed correctly!
+======================================
+```
 ## Tools Used
 
 * **Verilog HDL**
