@@ -1,594 +1,480 @@
-# Microcontroller Register Simulator
+# 8-bit RISC Processor Design using Verilog
 
-A modular **Embedded C-based microcontroller register and peripheral simulator** that models register-level operations, peripheral behavior, interrupt handling, event processing, system states, and application-level responses without requiring physical hardware.
+A simple **8-bit RISC processor designed and implemented using Verilog HDL**. The project demonstrates the fundamental concepts of processor architecture, including instruction execution, register operations, arithmetic and logical operations, memory access, control logic, and verification through simulation.
 
-The project is structured to reflect the layered architecture commonly used in embedded software, with independent modules for registers, peripherals, interrupts, events, application logic, system state, and outputs.
+The processor is designed with a **16-bit instruction format**, an **8-bit program counter**, an **8-register register file**, separate instruction and data memory, and a combinational control unit.
 
 ---
 
-## Overview
+## Project Overview
 
-The simulator models microcontroller hardware behavior using C variables as simulated registers and dedicated software modules for individual peripherals.
+This project implements a basic 8-bit RISC CPU at the RTL level using Verilog HDL.
 
-The overall architecture is:
+The processor follows a simplified RISC architecture in which instructions are decoded by a control unit and executed through the ALU, register file, and memory units.
 
-```text
-Registers
-    ↓
-Peripherals
-    ↓
-Interrupt Controller
-    ↓
-Events
-    ↓
-Application
-    ↓
-System State
-    ↓
-Alert Output
-```
+The design was developed to understand the internal working of a processor and to gain practical experience with:
 
-Each layer has a defined responsibility, allowing the system to be developed, tested, and extended in a modular manner.
+* RTL design
+* Digital logic design
+* Processor architecture
+* ALU design
+* Register-file implementation
+* Instruction decoding
+* Memory operations
+* Control-unit design
+* Verilog HDL simulation
+* Functional verification
 
 ---
 
 ## Features
 
-### Register-Level Simulation
-
-The project provides simulated hardware registers for peripheral control and status.
-
-Key concepts include:
-
-* Register-level programming
-* Memory-mapped I/O concepts
-* Fixed-width integer types
-* Register status and control fields
-* Bitwise operations
-* Bit masks
-* Bit setting, clearing, and toggling
-* `extern` declarations for shared registers
-
----
-
-## Supported Peripherals
-
-The simulator currently implements the following peripheral modules:
-
-### GPIO
-
-Supports:
-
-* GPIO output register simulation
-* Pin set operation
-* Pin clear operation
-* Pin toggle operation
-* Pin read operation
-* Pin validation
-* 32-bit register behavior
-
-### UART
-
-Supports:
-
-* Transmit-ready status
-* Transmit data handling
-* Transmission state
-* Automatic transmission completion
-* Receive status
-* UART data register simulation
-
-### Timer
-
-Supports:
-
-* Timer start and stop
-* Counter updates
-* Overflow detection
-* Overflow status
-* Sticky overflow behavior
-* Timer interrupt generation
-
-### ADC
-
-Supports:
-
-* ADC conversion control
-* Conversion completion
-* ADC data register
-* ADC value range handling
-* ADC data reading
-* ADC interrupt generation
-
-### PWM
-
-Supports:
-
-* PWM enable and disable
-* Duty-cycle configuration
-* Duty-cycle range validation
-
-### SPI
-
-Supports:
-
-* SPI enable and disable
-* Transmit-ready status
-* Data transmission
-* Receive data handling
-* Receive status
-* Busy-state behavior
-* Data overwrite handling
-
-### I2C
-
-Supports:
-
-* I2C enable and disable
-* Address configuration
-* Start and stop operations
-* Bus busy state
-* Data transmission
-* Data reception
-* Receive status
-* Address validation
-
-### Watchdog Timer
-
-Supports:
-
-* Watchdog enable and disable
-* Watchdog timeout configuration
-* Watchdog counter
-* Watchdog feeding
-* Timeout detection
-* Timeout status
-* INT2 generation
-* Zero-timeout handling
-* Sticky timeout status
+* 8-bit processor architecture
+* 16-bit fixed-width instruction format
+* 8-bit Program Counter (PC)
+* 8 general-purpose registers
+* Separate instruction and data memory
+* Arithmetic and logical operations
+* Immediate-value support
+* Register-to-register operations
+* Memory read and write operations
+* ALU zero flag
+* Combinational control unit
+* RTL-level modular design
+* Functional verification using Verilog testbenches
+* Simulation using Icarus Verilog
+* Waveform analysis using GTKWave
 
 ---
 
-# Interrupt Controller
+## Processor Architecture
 
-The interrupt controller provides a centralized mechanism for handling peripheral-generated interrupts.
-
-The simulator supports:
+The processor consists of the following major components:
 
 ```text
-INT0
-INT1
-INT2
+                    ┌──────────────────────┐
+                    │   Instruction Memory │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │   Instruction Fetch  │
+                    │      / PC Logic      │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │    Control Unit      │
+                    │ Instruction Decoder  │
+                    └───────┬───────┬──────┘
+                            │       │
+                            ▼       ▼
+                    ┌──────────┐  ┌──────────┐
+                    │ Register │  │   ALU    │
+                    │   File   │  │          │
+                    └────┬─────┘  └────┬─────┘
+                         │              │
+                         └──────┬───────┘
+                                │
+                                ▼
+                    ┌──────────────────────┐
+                    │     Data Memory      │
+                    │     Read / Write     │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │   Register Writeback │
+                    └──────────────────────┘
 ```
 
-Features include:
+### Main Data Flow
 
-* Interrupt enable and disable
-* Interrupt triggering
-* Pending interrupt status
-* Interrupt clearing
-* Interrupt handler registration
-* Interrupt servicing
-* Interrupt priority
-* Next-pending-interrupt servicing
-
-Interrupt handlers are implemented using function pointers, allowing peripheral events to be connected to appropriate handlers.
+```text
+PC
+ ↓
+Instruction Memory
+ ↓
+Instruction Decode
+ ↓
+Register File
+ ↓
+ALU / Data Memory
+ ↓
+Write Back
+ ↓
+Register File
+```
 
 ---
 
-# Event-Driven Architecture
+## RTL Modules
 
-Peripheral interrupts are converted into application-level events instead of directly controlling application behavior.
+The processor is divided into multiple Verilog modules to keep the design modular and easy to understand.
 
-The event layer currently supports:
+| Module                 | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `alu.v`                | Performs arithmetic and logical operations           |
+| `control_unit.v`       | Decodes instructions and generates control signals   |
+| `data_memory.v`        | Implements data memory for read/write operations     |
+| `instruction_memory.v` | Stores processor instructions                        |
+| `register_file.v`      | Implements the processor's register bank             |
+| `risc_cpu.v`           | Top-level processor module connecting all components |
+
+---
+
+## ALU
+
+The Arithmetic Logic Unit performs the required arithmetic and logical operations based on the control signals generated by the control unit.
+
+The ALU also generates a **Zero Flag**, which indicates whether the ALU result is zero.
+
+### ALU Inputs
+
+* Operand A
+* Operand B
+* ALU control signal
+
+### ALU Outputs
+
+* ALU result
+* Zero flag
+
+---
+
+## Register File
+
+The processor contains **8 general-purpose registers**.
 
 ```text
-Timer Event
-ADC Event
-WDT Event
-Alert Event
+Register File
+
+R0
+R1
+R2
+R3
+R4
+R5
+R6
+R7
 ```
 
-The general flow is:
+The register file provides the operands required by the ALU and stores results generated during instruction execution.
+
+---
+
+## Instruction Format
+
+The processor uses a **16-bit instruction format**.
+
+A fixed-width instruction format simplifies instruction fetching and decoding while keeping the processor architecture straightforward.
+
+The instruction fields are decoded by the control unit to determine:
+
+* Operation to perform
+* Source registers
+* Destination register
+* Immediate value
+* Memory operation
+* ALU operation
+
+---
+
+## Instruction Execution
+
+A typical instruction passes through the following stages:
+
+### 1. Instruction Fetch
+
+The Program Counter provides the address of the next instruction.
 
 ```text
-Peripheral
+PC → Instruction Memory
+```
+
+### 2. Instruction Decode
+
+The fetched instruction is decoded by the control unit.
+
+```text
+Instruction → Control Unit
+```
+
+### 3. Register Read
+
+Source operands are obtained from the register file.
+
+```text
+Register File → ALU
+```
+
+### 4. Execute
+
+The ALU performs the required arithmetic or logical operation.
+
+### 5. Memory Access
+
+For memory instructions, the processor accesses the data memory.
+
+### 6. Write Back
+
+The resulting value is written back to the destination register when required.
+
+---
+
+## Memory Organization
+
+The processor uses separate instruction and data memory modules.
+
+### Instruction Memory
+
+Stores the program instructions executed by the processor.
+
+```text
+Program Counter
+      ↓
+Instruction Memory
+      ↓
+16-bit Instruction
+```
+
+### Data Memory
+
+Stores data required by load/store operations.
+
+```text
+ALU / Address
+      ↓
+Data Memory
+      ↓
+Read / Write Data
+```
+
+---
+
+## Verification
+
+The design was verified using dedicated Verilog testbenches.
+
+### Testbenches
+
+```text
+tb/
+├── alu_tb.v
+├── register_file_tb.v
+└── risc_cpu_tb.v
+```
+
+The testbenches verify individual modules as well as the complete processor.
+
+### Verification Flow
+
+```text
+Verilog RTL
     ↓
-Interrupt
+Testbench
     ↓
-Interrupt Handler
+Icarus Verilog
     ↓
-Event
+Simulation
     ↓
-Application
-```
-
-This separates low-level interrupt handling from higher-level application processing.
-
----
-
-# Application Layer
-
-The application layer processes pending events and determines the resulting system behavior.
-
-The application maintains:
-
-* Timer event count
-* WDT event count
-* Last ADC value
-* ADC state
-* Alert status
-* Alert output status
-
-The application also coordinates the interaction between peripheral events and the system state.
-
----
-
-# System State Management
-
-The system state module maintains the overall operating state of the simulator.
-
-Three system states are currently defined:
-
-```text
-SYSTEM_INIT
-SYSTEM_RUNNING
-SYSTEM_ALERT
-```
-
-The state flow is:
-
-```text
-SYSTEM_INIT
-      ↓
-SYSTEM_RUNNING
-      ↓
-SYSTEM_ALERT
-```
-
-The application layer is responsible for transitioning the system into an alert state when appropriate events are processed.
-
----
-
-# Alert Output
-
-The alert output module provides an independent interface for controlling the system's alert output.
-
-It supports:
-
-* Alert output initialization
-* Alert output ON
-* Alert output OFF
-* Alert output status checking
-
-The application layer determines when the alert output should be activated.
-
----
-
-# Watchdog Timer Integration
-
-The Watchdog Timer demonstrates the complete peripheral-to-application event flow.
-
-When the watchdog reaches its configured timeout:
-
-```text
-WDT
- ↓
-Timeout
- ↓
-INT2
- ↓
-Interrupt Handler
- ↓
-WDT Event
- ↓
-Application
- ↓
-SYSTEM_ALERT
-```
-
-The WDT itself is responsible for detecting the timeout and generating INT2.
-
-The interrupt handler converts the interrupt into a WDT event.
-
-The application processes the event and changes the system state to `SYSTEM_ALERT`.
-
-This keeps the WDT, interrupt controller, event system, and application logic independent.
-
----
-
-# ADC Alert Integration
-
-The ADC is integrated into the interrupt and application layers.
-
-For example, when an ADC conversion produces a value of `800`:
-
-```text
-ADC Conversion
-      ↓
-ADC Interrupt
-      ↓
-ADC Event
-      ↓
-Application reads ADC value
-      ↓
-ADC_ALERT
-      ↓
-Alert Event
-      ↓
-SYSTEM_ALERT
-      ↓
-Alert Output ON
-```
-
-This demonstrates the complete flow from peripheral activity to application-level system response.
-
----
-
-# Project Architecture
-
-The project follows a layered modular architecture:
-
-```text
-                    ┌─────────────────────┐
-                    │      Registers      │
-                    └──────────┬──────────┘
-                               ↓
-                    ┌─────────────────────┐
-                    │     Peripherals     │
-                    │ GPIO / UART / ADC   │
-                    │ Timer / PWM / SPI   │
-                    │ I2C / WDT           │
-                    └──────────┬──────────┘
-                               ↓
-                    ┌─────────────────────┐
-                    │ Interrupt Controller│
-                    │      INT0/1/2       │
-                    └──────────┬──────────┘
-                               ↓
-                    ┌─────────────────────┐
-                    │       Events        │
-                    │ Timer / ADC / WDT   │
-                    │       / Alert       │
-                    └──────────┬──────────┘
-                               ↓
-                    ┌─────────────────────┐
-                    │     Application     │
-                    └──────────┬──────────┘
-                               ↓
-                    ┌─────────────────────┐
-                    │    System State     │
-                    │ INIT/RUNNING/ALERT  │
-                    └──────────┬──────────┘
-                               ↓
-                    ┌─────────────────────┐
-                    │    Alert Output     │
-                    └─────────────────────┘
+VCD Waveform
+    ↓
+GTKWave
 ```
 
 ---
 
-# Project Structure
+## Simulation Result
+
+The complete processor was simulated successfully.
+
+The processor executed the test instructions and produced the expected register values:
+
+| Register | Result |
+| -------- | -----: |
+| `R1`     |     10 |
+| `R2`     |      5 |
+| `R3`     |     15 |
+| `R4`     |      5 |
+| `R5`     |      0 |
+| `R6`     |     15 |
+
+The simulation produced the following verification message:
 
 ```text
-microcontroller-register-simulator/
+RISC CPU SUCCESS: All instructions executed correctly!
+```
+
+This confirms the functional operation of the implemented instruction sequence and the interaction between the processor's major RTL modules.
+
+---
+
+## Waveform Verification
+
+GTKWave was used to inspect the simulated processor signals and verify the behaviour of the RTL design.
+
+The waveform can be found in:
+
+```text
+screenshots/gtkwave_verification.png
+```
+
+The waveform helps verify:
+
+* Clock operation
+* Reset behaviour
+* Program Counter updates
+* Instruction execution
+* Register operations
+* ALU results
+* Memory operations
+* Control signals
+
+---
+
+## Repository Structure
+
+```text
+8-bit-RISC-Processor-Design-using-Verilog/
 │
-├── include/
-│   ├── adc.h
-│   ├── alert_output.h
-│   ├── application.h
-│   ├── events.h
-│   ├── gpio.h
-│   ├── interrupt.h
-│   ├── i2c.h
-│   ├── pwm.h
-│   ├── register.h
-│   ├── spi.h
-│   ├── system.h
-│   ├── timer.h
-│   ├── uart.h
-│   └── wdt.h
+├── rtl/
+│   ├── alu.v
+│   ├── control_unit.v
+│   ├── data_memory.v
+│   ├── instruction_memory.v
+│   ├── register_file.v
+│   └── risc_cpu.v
 │
-├── src/
-│   ├── adc.c
-│   ├── alert_output.c
-│   ├── application.c
-│   ├── events.c
-│   ├── gpio.c
-│   ├── interrupt.c
-│   ├── main.c
-│   ├── pwm.c
-│   ├── register.c
-│   ├── spi.c
-│   ├── system.c
-│   ├── timer.c
-│   ├── uart.c
-│   └── wdt.c
+├── tb/
+│   ├── alu_tb.v
+│   ├── register_file_tb.v
+│   └── risc_cpu_tb.v
 │
-├── tests/
-│   ├── test_adc.c
-│   ├── test_adc_interrupt.c
-│   ├── test_alert_output.c
-│   ├── test_application.c
-│   ├── test_application_wdt.c
-│   ├── test_events_wdt.c
-│   ├── test_gpio.c
-│   ├── test_i2c.c
-│   ├── test_interrupt_handlers.c
-│   ├── test_interrupt_int2.c
-│   ├── test_interrupt_priority.c
-│   ├── test_peripheral_interrupts.c
-│   ├── test_pwm.c
-│   ├── test_spi.c
-│   ├── test_system.c
-│   ├── test_timer.c
-│   ├── test_uart.c
-│   ├── test_wdt.c
-│   ├── test_wdt_application_integration.c
-│   └── test_wdt_interrupt_event.c
+├── screenshots/
+│   └── gtkwave_verification.png
 │
-├── diagrams/
-├── docs/
-├── examples/
-├── .gitignore
-├── LICENSE
 └── README.md
 ```
 
 ---
 
-# Build
+## Tools & Technologies
 
-The project uses **GCC** and the **C11 standard**.
+| Tool / Technology  | Purpose                             |
+| ------------------ | ----------------------------------- |
+| **Verilog HDL**    | RTL design                          |
+| **Icarus Verilog** | Compilation and simulation          |
+| **GTKWave**        | Waveform analysis                   |
+| **VS Code**        | Source-code development             |
+| **Git & GitHub**   | Version control and project hosting |
 
-From the project root:
+---
+
+## How to Run the Simulation
+
+### 1. Clone the Repository
 
 ```bash
-gcc -Wall -Wextra -std=c11 \
-src/main.c \
-src/register.c \
-src/timer.c \
-src/adc.c \
-src/interrupt.c \
-src/events.c \
-src/application.c \
-src/alert_output.c \
-src/system.c \
-src/wdt.c \
--Iinclude \
--o simulator
+git clone https://github.com/vidhyamadhavivemuri-spec/8-bit-RISC-Processor-Design-using-Verilog.git
 ```
 
-Run the simulator:
+### 2. Navigate to the Project
 
 ```bash
-./simulator
+cd 8-bit-RISC-Processor-Design-using-Verilog
+```
+
+### 3. Compile the ALU Testbench
+
+```bash
+iverilog -o alu_sim rtl/alu.v tb/alu_tb.v
+```
+
+### 4. Run the Simulation
+
+```bash
+vvp alu_sim
 ```
 
 ---
 
-# Testing
+### Register File Simulation
 
-The project includes standalone module tests and integration tests.
-
-The complete regression suite contains **20 test programs** covering:
-
-* ADC
-* ADC → INT1 integration
-* Alert output
-* Application event processing
-* WDT application events
-* WDT events
-* GPIO
-* I2C
-* Interrupt handlers
-* INT2
-* Interrupt priority
-* Peripheral interrupt integration
-* PWM
-* SPI
-* System state
-* Timer
-* UART
-* Watchdog Timer
-* WDT → Application integration
-* WDT → INT2 → Event integration
-
-The full simulator has also been compiled using:
-
-
--Wall -Wextra -std=c11
-
-
-and executed successfully.
-
-The complete regression run completed successfully with all **20 test executables passing**.
+```bash
+iverilog -o reg_sim rtl/register_file.v tb/register_file_tb.v
+vvp reg_sim
+```
 
 ---
 
-# Embedded C Concepts
+### Complete CPU Simulation
 
-The implementation demonstrates practical use of:
+```bash
+iverilog -o risc_cpu_sim \
+rtl/alu.v \
+rtl/control_unit.v \
+rtl/data_memory.v \
+rtl/instruction_memory.v \
+rtl/register_file.v \
+rtl/risc_cpu.v \
+tb/risc_cpu_tb.v
+```
 
-* Modular C programming
-* Header and source file separation
-* Function prototypes
-* `extern` declarations
-* Global variables
-* `static` module-level variables
-* Fixed-width integer types
-* Bitwise operators
-* Bit masks
-* Register manipulation
-* Memory-mapped I/O concepts
-* Function pointers
-* Interrupt handlers
-* Event-driven architecture
-* Peripheral abstraction
-* Application-layer processing
-* State-machine concepts
-* Unit testing
-* Integration testing
-* Defensive input validation
+Run the simulation:
+
+```bash
+vvp risc_cpu_sim
+```
 
 ---
 
-# Design Principles
 
-The project follows several principles commonly used in embedded software development.
 
-### Modular Design
-
-Each peripheral and software layer is implemented as an independent module.
-
-### Separation of Responsibilities
-
-Low-level hardware simulation, interrupt handling, event processing, and application logic are kept separate.
-
-### Event-Driven Processing
-
-Interrupt handlers generate events, while the application processes those events separately.
-
-### Testability
-
-Individual modules can be tested independently, while integration tests verify communication between multiple layers.
-
-### Controlled Interfaces
-
-Header files expose module interfaces while implementation details remain inside the corresponding source files.
+The waveform can then be inspected using GTKWave.
 
 ---
 
-# Verification
+##  Learning Outcomes
 
-The final implementation has been verified through:
+This project provided practical experience in:
 
-* Individual peripheral tests
-* Interrupt controller tests
-* Interrupt handler tests
-* Peripheral interrupt integration tests
-* Application-level tests
-* WDT integration tests
-* System state tests
-* Alert output tests
-* Full simulator execution
-* Full regression testing
-
-
----
-
-# Status
-
-**Completed**
-
-The core register, peripheral, interrupt, event, application, system-state, and alert-output layers have been implemented and integrated.
-
-The simulator currently provides a complete software flow from simulated hardware activity to application-level system response.
+* Understanding basic CPU architecture
+* Designing RTL modules using Verilog HDL
+* Implementing an ALU
+* Designing a register file
+* Implementing instruction and data memory
+* Developing a control unit
+* Understanding instruction decoding
+* Connecting multiple RTL modules
+* Writing Verilog testbenches
+* Performing functional verification
+* Debugging simulation results
+* Analysing digital waveforms using GTKWave
+* Using Git and GitHub for HDL projects
 
 ---
 
-# Author
+##  Future Improvements
+
+The processor can be extended with additional architectural features, such as:
+
+* Larger register file
+* Expanded instruction set
+* Branch and jump instructions
+* Improved control logic
+* More addressing modes
+* Pipeline stages
+* Hazard detection and handling
+* Interrupt support
+* Memory-mapped peripherals
+* FPGA implementation
+* Hardware-based verification
+
+---
+
+##  Author
 
 **Vemuri Vidhya Madhavi**
 
-Electronics and Telematics Engineering
+B.Tech — Electronics and Telematics Engineering
